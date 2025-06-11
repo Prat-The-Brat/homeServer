@@ -1,136 +1,127 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import "./App.css";
 
-// 🔧 Replace with your live ngrok URL when you deploy
-const API_BASE = "http://192.168.0.169:8000";
+const API_BASE = "https://996f-203-192-204-172.ngrok-free.app";
 
-/* --------------------------------------------------
-   📁 Reusable FileTree component – recursive, collapsible
------------------------------------------------------*/
-const FileTree = ({ files }) => {
-  const [open, setOpen] = useState({});
+function FileTree({ files }) {
+  const [expanded, setExpanded] = useState({});
 
-  const toggle = (path) => setOpen((p) => ({ ...p, [path]: !p[path] }));
+  const toggle = (path) => {
+    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
+  };
 
   return (
-    <ul className="pl-4 space-y-1">
-      {files.map((f) => (
-        <li key={f.path}>
-          {f.type === "folder" ? (
+    <ul className="file-tree">
+      {files.map((file) => (
+        <li key={file.path} className="file-item">
+          {file.type === "folder" ? (
             <>
-              <button
-                onClick={() => toggle(f.path)}
-                className="flex items-center text-indigo-600 hover:text-indigo-800 focus:outline-none"
-              >
-                <span className="mr-1">
-                  {open[f.path] ? "📂" : "📁"}
-                </span>
-                <span className="font-medium">{f.name}</span>
-              </button>
-              {open[f.path] && f.children?.length > 0 && (
-                <FileTree files={f.children} />
+              <span className="folder-name" onClick={() => toggle(file.path)}>
+                <span className="folder-icon">📁</span> {file.name}
+              </span>
+              {expanded[file.path] && file.children && (
+                <FileTree files={file.children} />
               )}
             </>
           ) : (
             <a
-              href={`${API_BASE}/download/${f.path}`}
+              href={`${API_BASE}/download/${file.path}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center text-gray-700 hover:text-indigo-600"
+              className="file-link"
             >
-              <span className="mr-1">📄</span>
-              {f.name}
+              <span className="file-icon">📄</span> {file.name}
             </a>
           )}
         </li>
       ))}
     </ul>
   );
-};
+}
 
-/* --------------------------------------------------
-   🗂️ Main App component
------------------------------------------------------*/
-export default function App() {
+function App() {
   const [files, setFiles] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  /* ------------------------- API helpers ------------------------ */
   const fetchFiles = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const { data } = await axios.get(`${API_BASE}/files`);
-      setFiles(data.files || []);
+      const res = await axios.get(`${API_BASE}/files`, {
+        headers: {
+          Accept: "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (res.data && Array.isArray(res.data.files)) {
+        setFiles(res.data.files);
+      } else {
+        console.error("Invalid response from API:", res.data);
+      }
     } catch (err) {
-      setError("Failed to load files. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error("Error fetching files:", err);
     }
   };
 
   const uploadFile = async () => {
-    if (!selectedFile) return;
-    setUploading(true);
-    setError("");
+    if (!file) return;
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
     try {
-      const form = new FormData();
-      form.append("file", selectedFile);
-      await axios.post(`${API_BASE}/upload`, form);
-      setSelectedFile(null);
-      fetchFiles();
+      await axios.post(`${API_BASE}/upload`, formData, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      setFile(null);
+      await fetchFiles();
     } catch (err) {
-      setError("Upload failed. Please try again.");
+      console.error("Upload failed:", err);
     } finally {
-      setUploading(false);
+      setIsUploading(false);
     }
   };
 
-  /* ---------------------------- lifecycle ----------------------- */
   useEffect(() => {
     fetchFiles();
   }, []);
 
-  /* ---------------------------- render -------------------------- */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8 font-sans">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-        {/* Header */}
-        <h1 className="text-3xl font-bold text-indigo-700 mb-6 flex items-center">
-          <span className="mr-2">🗂️</span> Bhonge File Browser
-        </h1>
+    <div className="app-container">
+      <header className="app-header">
+        <h1 className="app-title">🗂️ Bhonge File Browser</h1>
+      </header>
 
-        {/* Upload */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-8">
+      <section className="upload-section">
+        <div className="upload-container">
           <input
             type="file"
-            className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 flex-1 mb-4 sm:mb-0"
-            onChange={(e) => setSelectedFile(e.target.files[0])}
+            onChange={(e) => setFile(e.target.files[0])}
+            className="file-input"
           />
           <button
             onClick={uploadFile}
-            disabled={!selectedFile || uploading}
-            className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="upload-button"
+            disabled={!file || isUploading}
           >
-            {uploading ? "Uploading..." : "Upload"}
+            {isUploading ? "Uploading..." : "Upload"}
           </button>
         </div>
+      </section>
 
-        {/* Status Messages */}
-        {error && (
-          <div className="mb-4 text-red-600 font-semibold">{error}</div>
-        )}
-        {loading ? (
-          <div className="text-gray-600">Loading files...</div>
-        ) : files.length === 0 ? (
-          <div className="text-gray-500">No files found. Upload something ✨</div>
+      <section className="files-section">
+        <h2 className="files-title">📁 Files</h2>
+        {files.length === 0 ? (
+          <div className="empty-state">
+            <p>No files found. Upload a file to get started!</p>
+          </div>
         ) : (
           <FileTree files={files} />
         )}
-      </div>
+      </section>
     </div>
   );
 }
+
+export default App;

@@ -1,89 +1,26 @@
-/* App.css */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to right, #e0eafc, #cfdef3);
-  color: #333;
-}
-
-.app-container {
-  max-width: 800px;
-  margin: auto;
+.app {
   padding: 2rem;
+  font-family: sans-serif;
 }
 
-h1 {
-  text-align: center;
-  font-size: 2rem;
+.upload-box {
   margin-bottom: 2rem;
-  color: #2c3e50;
-}
-
-.upload-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.file-input {
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.upload-button {
-  padding: 0.5rem 1.2rem;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-
-.upload-button:hover {
-  background-color: #357ab8;
-}
-
-.files-section {
-  background-color: #ffffffcc;
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.files-title {
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
 }
 
 .file-tree {
-  list-style-type: none;
+  list-style: none;
   padding-left: 1rem;
 }
 
-.file-item {
-  margin-bottom: 0.6rem;
-}
-
-.folder-name {
-  font-weight: bold;
+.folder {
   cursor: pointer;
-  color: #2d3436;
+  font-weight: bold;
+  margin: 0.5rem 0;
 }
 
-.folder-name:hover {
-  text-decoration: underline;
-}
-
-.file-link {
-  color: #2980b9;
+.file {
   text-decoration: none;
-}
-
-.file-link:hover {
-  text-decoration: underline;
+  color: #333;
+  display: block;
+  margin: 0.25rem 0;
 }
