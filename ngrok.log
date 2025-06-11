@@ -1,0 +1,9 @@
+nohup: ignoring input
+t=2025-06-11T16:00:07+0530 lvl=info msg="no configuration paths supplied"
+t=2025-06-11T16:00:07+0530 lvl=info msg="using configuration at default config path" path=/home/pratham-bhonge/.config/ngrok/ngrok.yml
+t=2025-06-11T16:00:07+0530 lvl=info msg="open config file" path=/home/pratham-bhonge/.config/ngrok/ngrok.yml err=nil
+t=2025-06-11T16:00:07+0530 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2025-06-11T16:00:07+0530 lvl=info msg="client session established" obj=tunnels.session
+t=2025-06-11T16:00:07+0530 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2025-06-11T16:00:07+0530 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8000 url=https://0497-203-192-204-172.ngrok-free.app
+t=2025-06-11T16:03:04+0530 lvl=info msg="join connections" obj=join id=f0440fa17138 l=127.0.0.1:8000 r=203.192.204.172:14276

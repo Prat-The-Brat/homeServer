@@ -1,126 +1,136 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./App.css";
 
-const API_BASE = "https://f8a0-203-192-204-172.ngrok-free.app";
+// 🔧 Replace with your live ngrok URL when you deploy
+const API_BASE = "http://192.168.0.169:8000";
 
-function FileTree({ files }) {
-  const [expanded, setExpanded] = useState({});
+/* --------------------------------------------------
+   📁 Reusable FileTree component – recursive, collapsible
+-----------------------------------------------------*/
+const FileTree = ({ files }) => {
+  const [open, setOpen] = useState({});
 
-  const toggle = (path) => {
-    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
-  };
+  const toggle = (path) => setOpen((p) => ({ ...p, [path]: !p[path] }));
 
   return (
-    <ul className="file-tree">
-      {files.map((file) => (
-        <li key={file.path} className="file-item">
-          {file.type === "folder" ? (
+    <ul className="pl-4 space-y-1">
+      {files.map((f) => (
+        <li key={f.path}>
+          {f.type === "folder" ? (
             <>
-              <span
-                className="folder-name"
-                onClick={() => toggle(file.path)}
+              <button
+                onClick={() => toggle(f.path)}
+                className="flex items-center text-indigo-600 hover:text-indigo-800 focus:outline-none"
               >
-                <span className="folder-icon">📁</span>
-                {file.name}
-              </span>
-              {expanded[file.path] && file.children && (
-                <FileTree files={file.children} />
+                <span className="mr-1">
+                  {open[f.path] ? "📂" : "📁"}
+                </span>
+                <span className="font-medium">{f.name}</span>
+              </button>
+              {open[f.path] && f.children?.length > 0 && (
+                <FileTree files={f.children} />
               )}
             </>
           ) : (
             <a
-              href={`${API_BASE}/download/${file.path}`}
+              href={`${API_BASE}/download/${f.path}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="file-link"
+              className="flex items-center text-gray-700 hover:text-indigo-600"
             >
-              <span className="file-icon">📄</span>
-              {file.name}
+              <span className="mr-1">📄</span>
+              {f.name}
             </a>
           )}
         </li>
       ))}
     </ul>
   );
-}
+};
 
-function App() {
+/* --------------------------------------------------
+   🗂️ Main App component
+-----------------------------------------------------*/
+export default function App() {
   const [files, setFiles] = useState([]);
-  const [file, setFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
 
+  /* ------------------------- API helpers ------------------------ */
   const fetchFiles = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res = await axios.get(`${API_BASE}/files`);
-      setFiles(res.data.files);
+      const { data } = await axios.get(`${API_BASE}/files`);
+      setFiles(data.files || []);
     } catch (err) {
-      console.error("Error fetching files:", err);
+      setError("Failed to load files. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const uploadFile = async () => {
-    if (!file) return;
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    if (!selectedFile) return;
+    setUploading(true);
+    setError("");
     try {
-      await axios.post(`${API_BASE}/upload`, formData);
-      setFile(null);
-      await fetchFiles();
+      const form = new FormData();
+      form.append("file", selectedFile);
+      await axios.post(`${API_BASE}/upload`, form);
+      setSelectedFile(null);
+      fetchFiles();
     } catch (err) {
-      console.error("Upload failed:", err);
+      setError("Upload failed. Please try again.");
     } finally {
-      setIsUploading(false);
+      setUploading(false);
     }
   };
 
+  /* ---------------------------- lifecycle ----------------------- */
   useEffect(() => {
     fetchFiles();
   }, []);
 
+  /* ---------------------------- render -------------------------- */
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1 className="app-title">
-          <span role="img" aria-label="folder">🗂️</span>
-          Bhonge File Browser
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8 font-sans">
+      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        {/* Header */}
+        <h1 className="text-3xl font-bold text-indigo-700 mb-6 flex items-center">
+          <span className="mr-2">🗂️</span> Bhonge File Browser
         </h1>
-      </header>
 
-      <section className="upload-section">
-        <div className="upload-container">
+        {/* Upload */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-8">
           <input
             type="file"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="file-input"
-            id="file-upload"
+            className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 flex-1 mb-4 sm:mb-0"
+            onChange={(e) => setSelectedFile(e.target.files[0])}
           />
           <button
             onClick={uploadFile}
-            className="upload-button"
-            disabled={!file || isUploading}
+            disabled={!selectedFile || uploading}
+            className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isUploading ? "Uploading..." : "Upload"}
+            {uploading ? "Uploading..." : "Upload"}
           </button>
         </div>
-      </section>
 
-      <section className="files-section">
-        <h2 className="files-title">
-          <span role="img" aria-label="files">📁</span>
-          Files
-        </h2>
-        {files.length === 0 ? (
-          <div className="empty-state">
-            <p>No files found. Upload a file to get started!</p>
-          </div>
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-4 text-red-600 font-semibold">{error}</div>
+        )}
+        {loading ? (
+          <div className="text-gray-600">Loading files...</div>
+        ) : files.length === 0 ? (
+          <div className="text-gray-500">No files found. Upload something ✨</div>
         ) : (
           <FileTree files={files} />
         )}
-      </section>
+      </div>
     </div>
   );
 }
-
-export default App;
