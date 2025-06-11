@@ -18,7 +18,10 @@ function FileTree({ files }) {
           {file.type === "folder" ? (
             <>
               <span className="folder-name" onClick={() => toggle(file.path)}>
-                <span className="folder-icon">📁</span> {file.name}
+                <span className="folder-icon">
+                  {expanded[file.path] ? "📂" : "📁"}
+                </span>
+                {file.name}
               </span>
               {expanded[file.path] && file.children && (
                 <FileTree files={file.children} />
@@ -31,7 +34,8 @@ function FileTree({ files }) {
               rel="noopener noreferrer"
               className="file-link"
             >
-              <span className="file-icon">📄</span> {file.name}
+              <span className="file-icon">📄</span>
+              {file.name}
             </a>
           )}
         </li>
@@ -44,9 +48,11 @@ function App() {
   const [files, setFiles] = useState([]);
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchFiles = async () => {
     try {
+      setError(null);
       const res = await axios.get(`${API_BASE}/files`, {
         headers: {
           Accept: "application/json",
@@ -56,16 +62,18 @@ function App() {
       if (res.data && Array.isArray(res.data.files)) {
         setFiles(res.data.files);
       } else {
-        console.error("Invalid response from API:", res.data);
+        throw new Error("Invalid response from API");
       }
     } catch (err) {
       console.error("Error fetching files:", err);
+      setError("Failed to load files. Please try again later.");
     }
   };
 
   const uploadFile = async () => {
     if (!file) return;
     setIsUploading(true);
+    setError(null);
     const formData = new FormData();
     formData.append("file", file);
     try {
@@ -78,6 +86,7 @@ function App() {
       await fetchFiles();
     } catch (err) {
       console.error("Upload failed:", err);
+      setError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -90,7 +99,10 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1 className="app-title">🗂️ Bhonge File Browser</h1>
+        <h1 className="app-title">
+          <span role="img" aria-label="folder">🗂️</span>
+          BhongeFiles
+        </h1>
       </header>
 
       <section className="upload-section">
@@ -99,19 +111,39 @@ function App() {
             type="file"
             onChange={(e) => setFile(e.target.files[0])}
             className="file-input"
+            id="file-upload"
+            disabled={isUploading}
           />
           <button
             onClick={uploadFile}
             className="upload-button"
             disabled={!file || isUploading}
           >
-            {isUploading ? "Uploading..." : "Upload"}
+            {isUploading ? (
+              <>
+                <span role="img" aria-label="uploading">⏳</span>
+                Uploading...
+              </>
+            ) : (
+              <>
+                <span role="img" aria-label="upload">⬆️</span>
+                Upload
+              </>
+            )}
           </button>
         </div>
+        {error && (
+          <div className="error-message" style={{ color: '#ef4444', marginTop: '1rem', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
       </section>
 
       <section className="files-section">
-        <h2 className="files-title">📁 Files</h2>
+        <h2 className="files-title">
+          <span role="img" aria-label="files">📁</span>
+          Files
+        </h2>
         {files.length === 0 ? (
           <div className="empty-state">
             <p>No files found. Upload a file to get started!</p>
