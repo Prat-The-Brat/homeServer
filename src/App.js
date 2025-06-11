@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import "./App.css";
 
 const API_BASE = "https://4cd8-203-192-204-172.ngrok-free.app";
 
@@ -11,16 +12,17 @@ function FileTree({ files }) {
   };
 
   return (
-    <ul style={{ listStyle: "none", paddingLeft: "1rem" }}>
+    <ul className="file-tree">
       {files.map((file) => (
-        <li key={file.path} style={{ marginBottom: "0.5rem" }}>
+        <li key={file.path} className="file-item">
           {file.type === "folder" ? (
             <>
               <span
-                style={{ cursor: "pointer", fontWeight: "bold" }}
+                className="folder-name"
                 onClick={() => toggle(file.path)}
               >
-                📁 {file.name}
+                <span className="folder-icon">📁</span>
+                {file.name}
               </span>
               {expanded[file.path] && file.children && (
                 <FileTree files={file.children} />
@@ -31,8 +33,10 @@ function FileTree({ files }) {
               href={`${API_BASE}/download/${file.path}`}
               target="_blank"
               rel="noopener noreferrer"
+              className="file-link"
             >
-              📄 {file.name}
+              <span className="file-icon">📄</span>
+              {file.name}
             </a>
           )}
         </li>
@@ -44,6 +48,7 @@ function FileTree({ files }) {
 function App() {
   const [files, setFiles] = useState([]);
   const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fetchFiles = async () => {
     try {
@@ -56,14 +61,17 @@ function App() {
 
   const uploadFile = async () => {
     if (!file) return;
+    setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
     try {
       await axios.post(`${API_BASE}/upload`, formData);
       setFile(null);
-      fetchFiles();
+      await fetchFiles();
     } catch (err) {
       console.error("Upload failed:", err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -72,24 +80,45 @@ function App() {
   }, []);
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ marginBottom: "1rem" }}>🗂️ My File Browser</h1>
+    <div className="app-container">
+      <header className="app-header">
+        <h1 className="app-title">
+          <span role="img" aria-label="folder">🗂️</span>
+          Bhonge File Browser
+        </h1>
+      </header>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-        <button onClick={uploadFile} style={{ marginLeft: "10px", padding: "0.4rem 1rem" }}>
-          Upload
-        </button>
-      </div>
+      <section className="upload-section">
+        <div className="upload-container">
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files[0])}
+            className="file-input"
+            id="file-upload"
+          />
+          <button
+            onClick={uploadFile}
+            className="upload-button"
+            disabled={!file || isUploading}
+          >
+            {isUploading ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+      </section>
 
-      <div>
-        <h3>📁 Files:</h3>
+      <section className="files-section">
+        <h2 className="files-title">
+          <span role="img" aria-label="files">📁</span>
+          Files
+        </h2>
         {files.length === 0 ? (
-          <p>No files found.</p>
+          <div className="empty-state">
+            <p>No files found. Upload a file to get started!</p>
+          </div>
         ) : (
           <FileTree files={files} />
         )}
-      </div>
+      </section>
     </div>
   );
 }
